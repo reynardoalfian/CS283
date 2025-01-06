@@ -35,10 +35,13 @@ Please provide answers to these questions using markdown notation and place them
 
 
 3. **Please provide a link to the repository you are using for this class.**
+
 https://github.com/reynardoalfian/CS283
 
 4. **Briefly describe what you want to get out of this class.**
+
 I want to be able to understand concepts of computer architecture and basic fundamental coding languages in a deeper level.
 
 5. **Briefly describe any concerns you might be having with being successful in this class (if any).**
+
 I'm concerned about not being able to juggle this class with other courses and not completing assignments on time.
