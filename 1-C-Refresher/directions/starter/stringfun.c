@@ -7,29 +7,87 @@
 
 //prototypes
 void usage(char *);
-void print_buff(char *);
-int  setup_buff(char *, char *, int);
-
+int  setup_buff(char *buff, const char *user_str, int len);
 //prototypes for functions to handle required functionality
 int  count_words(char *, int, int);
 //add additional prototypes here
+void reverse_string(char *buff, int str_len);
 int  string_replace(char *buff, int, const char *, const char *);
+int  word_print(char *buff, int str_len);
 
-int setup_buff(char *buff, char *user_str, int len) {
-    if (user_str == NULL) {
-        return -1;
+int setup_buff(char *buff, const char *user_str, int len) {
+    if (!buff || !user_str) {
+        return -2;
     }
-    int user_str_len = snprintf(buff, len, "%s", user_str); 
-    // Check if the user string was truncated
-    if (user_str_len >= len) {
-        return -1;
+
+    char *dest = buff;
+    const char *src = user_str;
+
+    int count = 0;
+    int in_space = 0;
+
+    while (*src != '\0') {
+        int is_whitespace = 0;
+        if (*src == ' ' || *src == '\t' || *src == '\n') {
+            is_whitespace = 1;
+        }
+
+        if (is_whitespace) {
+
+            if (!in_space && count > 0 && count < len) {
+                *dest = ' ';
+                dest++;
+                count++;
+                in_space = 1;
+            }
+        } else {
+
+            if (count < len) {
+                *dest = *src;
+                dest++;
+                count++;
+            } else {
+
+                return -1;
+            }
+            in_space = 0;
+        }
+        src++;
     }
-    
-    return user_str_len;
+
+
+    if (count > 0 && buff[count - 1] == ' ') {
+        count--;
+        dest--;
+        *dest = '.';
+    }
+
+
+    while (count < len) {
+        *dest = '.';
+        dest++;
+        count++;
+    }
+
+    int processed_len = 0;
+    for (int i = 0; i < len; i++) {
+        if (buff[i] == '.') {
+            break;
+        }
+        processed_len++;
+    }
+
+    return processed_len;
 }
 
+
+
 void print_buff(char *buff) {
-    printf("Buffer:  %s\n", buff);
+    printf("Buffer:  ");
+    for (int i = 0; i < BUFFER_SZ; i++) {
+        putchar(buff[i]);
+    }
+    putchar('\n');
 }
 
 void usage(char *exename){
@@ -38,42 +96,176 @@ void usage(char *exename){
 }
 
 int count_words(char *buff, int len, int str_len){
-    int word_count = 0;
-    int in_word = 0;
-
-    for (int i = 0; i < str_len; i++) {
-        if (buff[i] != ' ' && buff[i] != '\t' && buff[i] != '\n' && buff[i] != '\0') {
-            if (!in_word) {
-                in_word = 1;
-                word_count++;
-            }
-        } else {
-            in_word = 0;
+    if (!buff || str_len <= 0) {
+            return 0;
         }
-    }
+
+        int word_count = 0;
+        int in_word    = 0;
+        char *p = buff;
+        for (int i = 0; i < str_len; i++, p++) {
+            if (*p != ' ') {
+                if (!in_word) {
+                    in_word = 1;
+                    word_count++;
+                }
+            } else {
+                in_word = 0;
+            }
+        }
+
     return word_count;
 }
 
+void reverse_string(char *buff, int str_len) {
+    if (!buff || str_len <= 1) {
+        return;
+    }
+    char *start = buff;
+    char *end   = buff + (str_len - 1);
+
+    while (start < end) {
+        char temp = *start;
+        *start    = *end;
+        *end      = temp;
+
+        start++;
+        end--;
+    }
+}
+
 int string_replace(char *buff, int buff_size, const char *search, const char *replace) {
-    char *pos = strstr(buff, search);
-    if (!pos) {
-        return 0; // No match found
-    }
-
-    int search_len = strlen(search);
-    int replace_len = strlen(replace);
-    int remaining_len = strlen(pos + search_len);
-
-    int new_length = (pos - buff) + replace_len + remaining_len;
-    if (new_length >= buff_size) {
+    if (!buff || !search || !replace) {
         return -1;
-
-    if (replace_len != search_len) {
-        memmove(pos + replace_len, pos + search_len, remaining_len + 1);
     }
 
-    memcpy(pos, replace, replace_len);
+    int search_len = 0;
+    const char *s = search;
+    while (*s != '\0') {
+        search_len++;
+        s++;
+    }
+
+    int replace_len = 0;
+    const char *r = replace;
+    while (*r != '\0') {
+        replace_len++;
+        r++;
+    }
+
+    char *found = NULL;
+    int i = 0;
+    while (i <= buff_size - search_len) {
+        int match = 1;
+        for (int j = 0; j < search_len; j++) {
+            if (buff[i + j] != search[j]) {
+                match = 0;
+                break;
+            }
+        }
+        if (match) {
+            found = buff + i;
+            break;
+        }
+        i++;
+    }
+
+    if (found == NULL) {
+        return 0;
+    }
+
+    int current_len = 0;
+    while (current_len < buff_size && buff[current_len] != '.') {
+        current_len++;
+    }
+
+
+    int new_length = current_len - search_len + replace_len;
+    if (new_length > buff_size) {
+        return -1;
+    }
+
+
+    if (replace_len > search_len) {
+        int shift = replace_len - search_len;
+        for (int k = current_len; k >= (found - buff) + search_len; k--) {
+            if (k + shift < buff_size) {
+                buff[k + shift] = buff[k];
+            }
+        }
+    } else if (replace_len < search_len) {
+        int shift = search_len - replace_len;
+
+        for (int k = (found - buff) + search_len; k < current_len; k++) {
+            buff[k - shift] = buff[k];
+        }
+ 
+        for (int k = new_length; k < buff_size; k++) {
+            buff[k] = '.';
+        }
+    }
+
+    for (int j = 0; j < replace_len; j++) {
+        found[j] = replace[j];
+    }
+
+
+    if (replace_len >= search_len) {
+        for (int k = new_length; k < buff_size; k++) {
+            buff[k] = '.';
+        }
+    }
+
     return 1;
+}
+
+
+int word_print(char *buff, int str_len) {
+    if (!buff || str_len <= 0) {
+        return -1;
+    }
+
+    printf("Word Print\n");
+    printf("----------\n");
+
+    char *p       = buff;
+    int count     = 0;
+    int in_word   = 0; 
+    char *w_start = NULL;
+
+    int i;
+    for (i = 0; i < str_len; i++) {
+        if (p[i] != ' ') {
+            if (!in_word) {
+                in_word   = 1;
+                w_start   = &p[i];
+                count++;
+            }
+        } else {
+
+            if (in_word) {
+                in_word = 0;
+                int length = (&p[i]) - w_start;
+                printf("%d. ", count);
+                for (char *q = w_start; q < &p[i]; q++) {
+                    putchar(*q);
+                }
+                printf("(%d)\n", length);
+            }
+        }
+    }
+
+
+    if (in_word) {
+        int length = (&p[i]) - w_start;
+        printf("%d. ", count);
+        for (char *q = w_start; q < &p[i]; q++) {
+            putchar(*q);
+        }
+        printf("(%d)\n", length);
+    }
+
+    return count;
 }
 //ADD OTHER HELPER FUNCTIONS HERE FOR OTHER REQUIRED PROGRAM OPTIONS
 
@@ -96,7 +288,7 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
-    opt = (char)*(argv[1]+1);   //get the option flag
+    opt = *(argv[1]+1);   //get the option flag
 
     //handle the help flag and then exit normally
     if (opt == 'h'){
@@ -127,72 +319,106 @@ int main(int argc, char *argv[]){
         exit(99);
     }
 
+    for(int i = 0; i < BUFFER_SZ; i++) {
+        buff[i] = '.';
+    }
+
     user_str_len = setup_buff(buff, input_string, BUFFER_SZ);
-    
     if (user_str_len < 0){
-        printf("Error setting up buffer, error = %d", user_str_len);
-        exit(2);
+
+        if (user_str_len == -1) {
+            fprintf(stderr, "error: Provided input string is too long\n");
+            free(buff);
+            exit(3);
+        } else {
+            fprintf(stderr, "error: Unknown error in setup_buff()\n");
+            free(buff);
+            exit(3);
+        }
     }
 
     switch (opt){
-        case 'c':
-            // Count words in the buffer
+        case 'c': {
+            // Count words
             rc = count_words(buff, BUFFER_SZ, user_str_len);
-            if (rc < 0){
-                printf("Error counting words, rc = %d", rc);
-                exit(2);
+            if (rc < 0) {
+                fprintf(stderr, "Error counting words, rc = %d\n", rc);
+                free(buff);
+                exit(3);
             }
             printf("Word Count: %d\n", rc);
-            break;
-
-        case 'r':
-            // Reverse the string in the buffer
-            for (int i = 0; i < user_str_len / 2; i++) {
-                char temp = buff[i];
-                buff[i] = buff[user_str_len - i - 1];
-                buff[user_str_len - i - 1] = temp;
+            printf("Buffer:  [");
+            for (int i = 0; i < BUFFER_SZ; i++) {
+                putchar(buff[i]);
             }
-            printf("Reversed String: %s\n", buff);
+            printf("]\n");
             break;
+        }
 
-        case 'w':
-            // Count the number of whitespace characters in the buffer
-            rc = 0;
-            for (int i = 0; i < user_str_len; i++) {
-                if (buff[i] == ' ' || buff[i] == '\t' || buff[i] == '\n') {
-                    rc++;
-                }
+        case 'r': {
+            // Reverse
+            reverse_string(buff, user_str_len);
+            printf("Buffer:  [");
+            for (int i = 0; i < BUFFER_SZ; i++) {
+                putchar(buff[i]);
             }
-            printf("Whitespace Count: %d\n", rc);
+            printf("]\n");
             break;
+        }
+
+        case 'w': {
+            // Print words
+            rc = word_print(buff, user_str_len);
+            if (rc < 0) {
+                fprintf(stderr, "Error printing words, rc = %d\n", rc);
+                free(buff);
+                exit(3);
+            }
+            printf("\nNumber of words returned: %d\n", rc);
+            printf("Buffer:  [");
+            for (int i = 0; i < BUFFER_SZ; i++) {
+                putchar(buff[i]);
+            }
+            printf("]\n");
+            break;
+        }
 
         case 'x': {
-            // Makes sure there are enough arguments for search and replace
+            // search/replace functions
             if (argc < 5) {
                 fprintf(stderr, "Error: Missing search or replace string for -x option.\n");
                 usage(argv[0]);
+                free(buff);
                 exit(1);
             }
-
-            char *search = argv[3];   // The string to search for
-            char *replace = argv[4]; // The string to replace it with
+            char *search  = argv[3];
+            char *replace = argv[4];
 
             rc = string_replace(buff, BUFFER_SZ, search, replace);
-            if (rc < 0) {
-                fprintf(stderr, "Error: Buffer overflow during string replacement.\n");
-                exit(2);
+
+            if (rc < 0 || rc == 0) {
+
+                printf("Not Implemented!\n");
+                free(buff);
+                exit(3);
             }
 
-            printf("Modified String: %s\n", buff);
+            printf("Buffer:  [");
+            for (int i = 0; i < BUFFER_SZ; i++) {
+                putchar(buff[i]);
+            }
+            printf("]\n");
             break;
         }
-        default:
-            usage(argv[0]);
-            exit(1);
-    }
 
+        default: {
+                    usage(argv[0]);
+                    free(buff);
+                    exit(1);
+        }
+
+    }
     //TODO:  #6 Dont forget to free your buffer before exiting
-    print_buff(buff);
     free(buff);
     exit(0);
 }
