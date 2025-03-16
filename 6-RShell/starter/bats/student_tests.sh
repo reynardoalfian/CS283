@@ -53,7 +53,7 @@ pwd
 exit
 EOF
   [ "$status" -eq 0 ]
-  # Check that the output contains a slash (adjust as needed)
+
   [[ "$output" =~ "/" ]]
 }
 
@@ -63,7 +63,7 @@ dragon
 exit
 EOF
   [ "$status" -eq 0 ]
-  # Check for a typical pattern from your dragon art (e.g., "%%%%")
+
   [[ "$output" =~ "%%%%" ]]
 }
 
@@ -101,7 +101,6 @@ EOF
   [ "$status" -eq 0 ]
   # Expect "hello" echoed back with a newline before the next prompt
   [[ "$output" =~ "hello" ]]
-  # Optionally check that a newline exists before "rsh>" if your output formatting does that.
 }
 
 @test "Remote mode: multiple commands over persistent connection" {
